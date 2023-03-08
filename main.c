@@ -23,6 +23,7 @@ struct user
 
 /*PROTOTYPES*/
 void welcome_screen();
+void login();
 int new_user(void);
 void view_account(void);
 int check_acc_number(int x);
@@ -109,6 +110,47 @@ void view_account(void) {
     fclose(fptr);
 }
 
+/*This function allows you to pull up a specific account based on the user account number*/
+void login(void) {
+    int account_number;
+    char pass[8];
+    struct user u;
+
+    system("cls");
+    FILE* fptr = fopen("user-records.dat", "r");
+    if(fptr == NULL) {
+        fprintf(stderr, "ERROR opening file user-records.dat\n");
+        exit(-1);
+    }
+
+    printf("Please enter your unique account number: ");
+    scanf("%d", &account_number);
+
+    while(fread(&u, sizeof(struct user), 1, fptr)) {
+        if(u.acc_number == account_number) {
+            printf("Account Located! Please enter your password: ");
+            scanf("%s", &pass);
+
+            if (strcmp(pass, u.password) != 0) {
+                printf("Password invalid. Please try again. Press ENTER to continue.");
+                getch();
+                fclose(fptr);
+                login();
+            }
+            printf("%s's Account Info\n", u.fname);
+            divider();
+            printf("\n");
+            printf("Account Number: %d\nName: %10s %10s\nUser Email Address: %20s\nYour Balance: %d\nPassword: %10s\n", u.acc_number, u.fname, u.lname, u.email, u.balance, u.password);
+        }
+    }
+
+    fclose(fptr);
+}
+
+/*
+ * This function checks the user account number generated to make sure it doesn't already exist
+ * if it does already exist, it will generate a new account number.
+ */
 int check_acc_number(int x) {
     struct user u;
     int acc_numbers[20];
@@ -176,9 +218,9 @@ void welcome_screen() {
     print_walls(2);
     printf("|\t\t1. VIEW ALL ACCOUNTS [Press 1 then ENTER]\t\t\t|\n");
     printf("|\t\t2. OPEN AN ACCOUNT [Press 2 then ENTER]\t\t\t\t|\n");
+    printf("|\t\t3. LOGIN TO MY ACCOUNT [Press 3 then ENTER]\t\t\t|\n");
     print_walls(10);
     divider();
-
     printf("Please enter a selection: ");
     scanf("%d", &choice);
 
@@ -189,6 +231,9 @@ void welcome_screen() {
         break;
     case 2:
         new_user();
+        break;
+    case 3:
+        login();
         break;
     default:
         printf("Invalid choice.\n");
