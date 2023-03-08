@@ -22,6 +22,8 @@ struct user
 /*PROTOTYPES*/
 void welcome_screen();
 int new_user(void);
+void view_account(void);
+int check_acc_number(int x);
 void divider();
 void print_spaces(int x);
 void print_walls(int x);
@@ -35,9 +37,12 @@ int new_user(void) {
     struct user new_user;
     new_user.balance = 0;
     new_user.acc_number = rand()%10000+1;
+    int alternate_acc_number = check_acc_number(new_user.acc_number);
 
     FILE* fptr = fopen("user-records.dat", "a");
     if (fptr == NULL) return -1;
+
+    if (alternate_acc_number != 0) new_user.acc_number = alternate_acc_number;
 
     system("cls");
     printf("Your user number is: %d\n", new_user.acc_number);
@@ -68,7 +73,7 @@ int new_user(void) {
  * I have not yet implemented the ability to search for a specific user.
  *
  * */
-void view_account() {
+void view_account(void) {
 
     system("cls");
 
@@ -76,14 +81,39 @@ void view_account() {
 
     FILE* fptr = fopen("user-records.dat", "r");
     if (fptr == NULL) {
-        fprintf(stderr, "\nError opening user-records.dat\n\n");
+        fprintf(stderr, "\nERROR opening user-records.dat\n\n");
         exit(-1);
     }
 
     while(fread(&u, sizeof(struct user), 1, fptr))
-        printf("Account Number: %d\nName: %10s %10s\nUser Email Address: %20s\nYour Balance: %d\n\n", u.acc_number, u.fname, u.lname, u.email, u.balance);
-
+    {
+        printf("Account Number: %d\nName: %10s %10s\nUser Email Address: %20s\nYour Balance: %d\n", u.acc_number, u.fname, u.lname, u.email, u.balance);
+        divider();
+        printf("\n");
+    }
     fclose(fptr);
+}
+
+int check_acc_number(int x) {
+    struct user u;
+
+    FILE* fptr = fopen("user-records.dat", "a+");
+    if (fptr == NULL) {
+        fprintf(stderr, "\nERROR opening user-records.dat\n\n");
+        exit(-1);
+    }
+
+    while (fread(&u, sizeof(struct user), 1, fptr))
+    {
+        if (x == u.acc_number) {
+            fclose(fptr);
+            return rand()%10000+1;
+            break;
+        } 
+    }
+
+    return 0; 
+
 }
 
 /*Function to create dividing walls of "---" when printing things.*/
