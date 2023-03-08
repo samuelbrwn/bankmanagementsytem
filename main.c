@@ -8,12 +8,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <conio.h>
+#include <string.h>
 
 /*Global Declaration of the user struct*/
 struct user
 {
     int acc_number;
-    char fname[20], lname[20];
+    char fname[20], lname[20], password[8];
     char email[30];
     int balance;
 };
@@ -34,6 +36,8 @@ void print_walls(int x);
  * this user to a dat file in binary.
  */
 int new_user(void) {
+    char pass[20];
+    int next = 0;
     struct user new_user;
     new_user.balance = 0;
     new_user.acc_number = rand()%10000+1;
@@ -59,9 +63,20 @@ int new_user(void) {
     scanf("%s", new_user.email);
     printf("\n");
     divider();
+    printf("\nPlease enter a password <must be exactly 8 characters>: ");
+    scanf("%s", new_user.password);
+    printf("\n");
 
     fwrite(&new_user, sizeof (struct user), 1, fptr);
     
+    printf("Return to the Main Menu? [Press 1 then ENTER || 0 then ENTER to close software] ");
+    scanf("%d", &next);
+
+    if (next == 1) {
+        fclose(fptr);
+        welcome_screen();
+    }
+
     fclose(fptr);
     return 0;
 }
@@ -87,7 +102,7 @@ void view_account(void) {
 
     while(fread(&u, sizeof(struct user), 1, fptr))
     {
-        printf("Account Number: %d\nName: %10s %10s\nUser Email Address: %20s\nYour Balance: %d\n", u.acc_number, u.fname, u.lname, u.email, u.balance);
+        printf("Account Number: %d\nName: %10s %10s\nUser Email Address: %20s\nYour Balance: %d\nPassword: %10s\n", u.acc_number, u.fname, u.lname, u.email, u.balance, u.password);
         divider();
         printf("\n");
     }
@@ -96,6 +111,8 @@ void view_account(void) {
 
 int check_acc_number(int x) {
     struct user u;
+    int acc_numbers[20];
+    int counter = 0;
 
     FILE* fptr = fopen("user-records.dat", "a+");
     if (fptr == NULL) {
@@ -105,11 +122,12 @@ int check_acc_number(int x) {
 
     while (fread(&u, sizeof(struct user), 1, fptr))
     {
-        if (x == u.acc_number) {
-            fclose(fptr);
-            return rand()%10000+1;
-            break;
-        } 
+        acc_numbers[counter] = u.acc_number;
+        ++counter; 
+    }
+
+    for (int i = 0; i<20; ++i) {
+        if (x == acc_numbers[i]) return rand()%10000+1;
     }
 
     return 0; 
@@ -142,8 +160,10 @@ void print_walls(int x) {
 void welcome_screen() {
     int choice=0;
 
+    system("cls");
+
     divider();
-    printf("|\t ____    ____  ____   __  _       ___   _____       _____  ____  ___ ___\t|\n");
+    printf("|\t ____    ____  ____   __  _       ___   _____       _____  ____  ___ ___|\n");
     printf("|\t|    \\  /    ||    \\ |  |/ ]     /   \\ |     |     / ___/ /    ||   |   |\t|\n");
     printf("|\t|  o  )|  o  ||  _  ||  ' /     |     ||   __|    (   \\_ |  o  || _   _ |\t|\n");
     printf("|\t|     ||     ||  |  ||    \\     |  O  ||  |_       \\__  ||     ||  \\_/  |\t|\n");
@@ -152,10 +172,10 @@ void welcome_screen() {
     printf("|\t|_____||__|__||__|__||__|\\_|     \\___/ |__|         \\___||__|__||___|___|\t|\n");
     divider();
     print_walls(2);
-    printf("|\t\tPLEASE SELECT AN OPTION\t\t\t\t\t\t\t\t\t\t\t\t\t|\n");
+    printf("|\t\tPLEASE SELECT AN OPTION\t\t\t\t\t\t|\n");
     print_walls(2);
-    printf("|\t\t1. VIEW MY ACCOUNT [Press 1 then ENTER]\t\t\t\t\t\t\t\t\t|\n");
-    printf("|\t\t2. OPEN AN ACCOUNT [Press 2 then ENTER]\t\t\t\t\t\t\t\t\t|\n");
+    printf("|\t\t1. VIEW ALL ACCOUNTS [Press 1 then ENTER]\t\t\t|\n");
+    printf("|\t\t2. OPEN AN ACCOUNT [Press 2 then ENTER]\t\t\t\t|\n");
     print_walls(10);
     divider();
 
