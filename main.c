@@ -24,7 +24,7 @@ struct user
 /*PROTOTYPES*/
 void welcome_screen();
 void login();
-int new_user(void);
+void new_user(void);
 void view_account(void);
 int check_acc_number(int x);
 void divider();
@@ -36,8 +36,13 @@ void print_walls(int x);
  * This function creates a new user and then writes
  * this user to a dat file in binary.
  */
-int new_user(void) {
-    char pass[20];
+void new_user(void) {
+    int choice;
+    char choice_buff[100];
+    char pass[100];
+    char fname[100];
+    char lname[100];
+    char email[100];
     int next = 0;
     struct user new_user;
     new_user.balance = 0;
@@ -45,41 +50,56 @@ int new_user(void) {
     int alternate_acc_number = check_acc_number(new_user.acc_number);
 
     FILE* fptr = fopen("user-records.dat", "a");
-    if (fptr == NULL) return -1;
+    if (fptr == NULL) {
+        fprintf(stderr, "ERROR opening user-records.dat\n");
+        exit(-1);
+    }
 
     if (alternate_acc_number != 0) new_user.acc_number = alternate_acc_number;
 
     system("cls");
-    printf("Your user number is: %d\n", new_user.acc_number);
+    printf("Please enter your first name: ");
+    if(fgets(fname, sizeof fname, stdin)) {
+        fname[strcspn(fname, "\r\n")] = 0;
+        sscanf(fname, "%s", &new_user.fname);
+    }
     divider();
-    printf("\nPlease enter your First Name: ");
-    scanf("%s", new_user.fname);
-    printf("\n");
+    printf("Please enter your last name: ");
+    if(fgets(lname, sizeof lname, stdin)) {
+        lname[strcspn(lname, "\r\n")] = 0;
+        sscanf(lname, "%s", &new_user.lname);
+    }
     divider();
-    printf("\nPlease enter your Last Name: ");
-    scanf("%s", new_user.lname);
-    printf("\n");
+    printf("Please enter your e-mail: ");
+    if(fgets(email, sizeof email, stdin)) {
+        email[strcspn(email, "\r\n")] = 0;
+        sscanf(email, "%s", &new_user.email);
+    }
     divider();
-    printf("\nPlease enter your email: ");
-    scanf("%s", new_user.email);
-    printf("\n");
+    printf("Please a password: ");
+    if(fgets(pass, sizeof pass, stdin)) {
+        pass[strcspn(pass, "\r\n")] = 0;
+        sscanf(pass, "%s", &new_user.password);
+    }
     divider();
-    printf("\nPlease enter a password <must be exactly 8 characters>: ");
-    scanf("%s", new_user.password);
-    printf("\n");
 
     fwrite(&new_user, sizeof (struct user), 1, fptr);
-    
-    printf("Return to the Main Menu? [Press 1 then ENTER || 0 then ENTER to close software] ");
-    scanf("%d", &next);
-
-    if (next == 1) {
-        fclose(fptr);
-        welcome_screen();
-    }
-
     fclose(fptr);
-    return 0;
+    
+    printf("Would you like to return to the main menu? [Press 1 then ENTER for yes || Press 2 then ENTER to exit software.]");
+    if(fgets(choice_buff, 100, stdin)) {
+        choice_buff[strcspn(choice_buff, "\r\n")] = 0;
+        choice = atoi(choice_buff);
+        
+        switch (choice)
+        {
+            case 1:
+                welcome_screen();
+                break;
+            default:
+                break;
+        }
+    }
 }
 
 /*
@@ -90,6 +110,8 @@ int new_user(void) {
  *
  * */
 void view_account(void) {
+    int choice;
+    char choice_buff[100];
 
     system("cls");
 
@@ -108,11 +130,27 @@ void view_account(void) {
         printf("\n");
     }
     fclose(fptr);
+
+    printf("Would you like to return to the main menu? [Press 1 then ENTER for yes || Press 2 then ENTER to exit software.]");
+    if(fgets(choice_buff, 100, stdin)) {
+        choice_buff[strcspn(choice_buff, "\r\n")] = 0;
+        choice = atoi(choice_buff);
+        
+        switch (choice)
+        {
+            case 1:
+                welcome_screen();
+                break;
+            default:
+                break;
+        }
+    }
 }
 
 /*This function allows you to pull up a specific account based on the user account number*/
 void login(void) {
     int account_number;
+    char buff[1024];
     char pass[8];
     struct user u;
 
@@ -124,23 +162,31 @@ void login(void) {
     }
 
     printf("Please enter your unique account number: ");
-    scanf("%d", &account_number);
+    if(fgets(buff, 1024, stdin)) {
+        account_number = atoi(buff);
 
-    while(fread(&u, sizeof(struct user), 1, fptr)) {
-        if(u.acc_number == account_number) {
-            printf("Account Located! Please enter your password: ");
-            scanf("%s", &pass);
+        while(fread(&u, sizeof(struct user), 1, fptr)) {
+            if(u.acc_number == account_number) {
+                printf("Account Located! Please enter your password: ");
+                fgets(pass, 8, stdin);
 
-            if (strcmp(pass, u.password) != 0) {
-                printf("Password invalid. Please try again. Press ENTER to continue.");
+                if (strcmp(pass, u.password) != 0) {
+                    printf("Password invalid. Please try again. Press ENTER to continue.");
+                    getch();
+                    fclose(fptr);
+                    login();
+                }
+
+                printf("%d", account_number);
+                printf("%s's Account Info\n", u.fname);
+                divider();
+                printf("\n");
+                printf("Account Number: %d\nName: %10s %10s\nUser Email Address: %20s\nYour Balance: %d\nPassword: %10s\n", u.acc_number, u.fname, u.lname, u.email, u.balance, u.password);
+            } else {
+                printf("ERROR no account with that number found. Press ENTER to continue.\n");
                 getch();
-                fclose(fptr);
                 login();
             }
-            printf("%s's Account Info\n", u.fname);
-            divider();
-            printf("\n");
-            printf("Account Number: %d\nName: %10s %10s\nUser Email Address: %20s\nYour Balance: %d\nPassword: %10s\n", u.acc_number, u.fname, u.lname, u.email, u.balance, u.password);
         }
     }
 
@@ -169,7 +215,9 @@ int check_acc_number(int x) {
     }
 
     for (int i = 0; i<20; ++i) {
-        if (x == acc_numbers[i]) return rand()%10000+1;
+        if (x == acc_numbers[i]) {
+            x = rand()%10000+1;
+        } else return x;
     }
 
     return 0; 
@@ -200,7 +248,8 @@ void print_walls(int x) {
 }
 
 void welcome_screen() {
-    int choice=0;
+    int choice;
+    char choice_buff[100];
 
     system("cls");
 
@@ -222,22 +271,26 @@ void welcome_screen() {
     print_walls(10);
     divider();
     printf("Please enter a selection: ");
-    scanf("%d", &choice);
+    if(fgets(choice_buff, 100, stdin)) {
 
-    switch (choice)
-    {
-    case 1:
-        view_account();
-        break;
-    case 2:
-        new_user();
-        break;
-    case 3:
-        login();
-        break;
-    default:
-        printf("Invalid choice.\n");
-        break;
+        //choice_buff[strcspn(choice_buff, "\n")] = 0;
+        choice = atoi(choice_buff);
+
+        switch (choice)
+        {
+        case 1:
+            view_account();
+            break;
+        case 2:
+            new_user();
+            break;
+        case 3:
+            login();
+            break;
+        default:
+            printf("Invalid choice.\n");
+            break;
+        }
     }
 
 }
