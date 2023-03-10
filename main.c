@@ -23,6 +23,8 @@ struct user
 
 /*PROTOTYPES*/
 void welcome_screen();
+void deposit(struct user u);
+void withdraw(struct user u);
 void login();
 void new_user(void);
 void view_account(void);
@@ -31,6 +33,55 @@ void divider();
 void print_spaces(int x);
 void print_walls(int x);
 /*PROTOTYPES*/
+
+void deposit(struct user u) {
+    int counter = 0;
+    int deposit;
+    char deposit_buffer[100];
+    struct user u1;
+    struct user users_temp[100];
+    FILE* fptr = fopen("user-records.dat", "rb");
+    if(fptr == NULL){
+        fprintf(stderr, "ERROR opening file user-records.dat\n");
+        exit(-1);
+    }
+
+    system("cls");
+    printf("\nEnter Deposit Amount: ");
+    if(fgets(deposit_buffer, 100, stdin)) {
+        deposit_buffer[strcspn(deposit_buffer, "\r\n")] = 0;
+        deposit = atoi(deposit_buffer);
+    }
+    
+    u.balance = deposit;
+
+    while(fread(&u1, sizeof(struct user), 1, fptr)) {
+        users_temp[counter] = u1;
+        ++counter;
+    }
+    fclose(fptr);
+
+    for(int i=0; i<(sizeof(users_temp)/sizeof(users_temp[0])); i++) {
+        if (users_temp[i].acc_number == u.acc_number) {
+            users_temp[i] = u;
+            break;
+        }
+    }
+    
+    fptr = fopen("user-records.dat", "wb");
+    if(fptr == NULL) {
+        fprintf(stderr, "ERROR opening user-records.dat\n");
+        exit(-1);
+    }
+    for(int i = 0; i<counter; ++i) {
+        fwrite(&users_temp[i],sizeof(struct user), 1, fptr);
+    }
+    fclose(fptr);
+}
+
+void withdraw(struct user u) {
+
+}
 
 /*
  * This function creates a new user and then writes
@@ -76,7 +127,7 @@ void new_user(void) {
         sscanf(email, "%s", &new_user.email);
     }
     divider();
-    printf("Please a password: ");
+    printf("Please enter a password: ");
     if(fgets(pass, sizeof pass, stdin)) {
         pass[strcspn(pass, "\r\n")] = 0;
         sscanf(pass, "%s", &new_user.password);
@@ -150,9 +201,12 @@ void view_account(void) {
 /*This function allows you to pull up a specific account based on the user account number*/
 void login(void) {
     int account_number;
+    int acc_number_exists = 0;
+    int counter = 0;
     char buff[1024];
-    char pass[8];
+    char pass[100];
     struct user u;
+    struct user users[10];
 
     system("cls");
     FILE* fptr = fopen("user-records.dat", "r");
@@ -161,36 +215,75 @@ void login(void) {
         exit(-1);
     }
 
+    /*
+     * Read all users into an array, later allowing us to iterate through the stucts
+     * to find the correct user
+     */
+    while(fread(&u, sizeof(struct user), 1, fptr)) {
+        users[counter] = u;
+        ++counter;
+    }
+    
+    counter = 0;
     printf("Please enter your unique account number: ");
     if(fgets(buff, 1024, stdin)) {
+        buff[strcspn(buff, "\r\n")] = 0;
         account_number = atoi(buff);
-
-        while(fread(&u, sizeof(struct user), 1, fptr)) {
-            if(u.acc_number == account_number) {
-                printf("Account Located! Please enter your password: ");
-                fgets(pass, 8, stdin);
-
-                if (strcmp(pass, u.password) != 0) {
-                    printf("Password invalid. Please try again. Press ENTER to continue.");
-                    getch();
-                    fclose(fptr);
-                    login();
-                }
-
-                printf("%d", account_number);
-                printf("%s's Account Info\n", u.fname);
-                divider();
-                printf("\n");
-                printf("Account Number: %d\nName: %10s %10s\nUser Email Address: %20s\nYour Balance: %d\nPassword: %10s\n", u.acc_number, u.fname, u.lname, u.email, u.balance, u.password);
-            } else {
-                printf("ERROR no account with that number found. Press ENTER to continue.\n");
-                getch();
-                login();
-            }
-        }
     }
 
-    fclose(fptr);
+    for(int i=0; i<(sizeof(users)/sizeof(users[0])); i++) {
+        if (users[i].acc_number == account_number) {
+            acc_number_exists = 1;
+            u =  users[i];
+            break;
+        }
+    }
+    
+    if(acc_number_exists) {
+        printf("Account located! Please enter your password: ");
+        if(fgets(pass, 100, stdin)) {
+            pass[strcspn(pass, "\r\n")] = 0;
+            sscanf(pass, "%s", pass);
+         }
+
+        if(strcmp(u.password, pass) != 0) {
+            printf("Password invalid. Press ENTER to try again.");
+            fclose(fptr);
+            getch();
+            login();
+        } else {
+            int choice;
+            char choice_buffer[10];
+
+            printf("Account Number: %d\nName: %10s %10s\nEmail: %40s\nBalance: %d\nPassword: %10s\n", u.acc_number, u.fname, u.lname, u.email, u.balance, u.password);
+            divider();
+            printf("What would you like to do?\n");
+            printf("1. DEPOSIT [Press 1 then ENTER]\n");
+            printf("2. WITHDRAWAL [Press 2 then ENTER]\n");
+            if(fgets(choice_buffer, 10, stdin)) {
+                choice_buffer[strcspn(choice_buffer, "\r\n")] = 0;
+                choice = atoi(choice_buffer);
+            }
+
+            switch(choice)
+            {
+                case 1:
+                    deposit(u);
+                    break;
+                case 2:
+                    withdraw(u);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+    } else {
+        printf("No account with this Account Number exists. Press ENTER to try again.\n");
+        fclose(fptr);
+        getch();
+        login();
+    }
 }
 
 /*
@@ -273,7 +366,7 @@ void welcome_screen() {
     printf("Please enter a selection: ");
     if(fgets(choice_buff, 100, stdin)) {
 
-        //choice_buff[strcspn(choice_buff, "\n")] = 0;
+        choice_buff[strcspn(choice_buff, "\n")] = 0;
         choice = atoi(choice_buff);
 
         switch (choice)
