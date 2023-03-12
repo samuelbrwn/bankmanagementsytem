@@ -39,7 +39,7 @@ void deposit(struct user u) {
     int deposit;
     char deposit_buffer[100];
     struct user u1;
-    struct user users_temp[100];
+    struct user users[100];
     FILE* fptr = fopen("user-records.dat", "rb");
     if(fptr == NULL){
         fprintf(stderr, "ERROR opening file user-records.dat\n");
@@ -56,14 +56,14 @@ void deposit(struct user u) {
     u.balance = deposit;
 
     while(fread(&u1, sizeof(struct user), 1, fptr)) {
-        users_temp[counter] = u1;
+        users[counter] = u1;
         ++counter;
     }
     fclose(fptr);
 
-    for(int i=0; i<(sizeof(users_temp)/sizeof(users_temp[0])); i++) {
-        if (users_temp[i].acc_number == u.acc_number) {
-            users_temp[i] = u;
+    for(int i=0; i<(sizeof(users)/sizeof(users[0])); i++) {
+        if (users[i].acc_number == u.acc_number) {
+            users[i] = u;
             break;
         }
     }
@@ -74,12 +74,55 @@ void deposit(struct user u) {
         exit(-1);
     }
     for(int i = 0; i<counter; ++i) {
-        fwrite(&users_temp[i],sizeof(struct user), 1, fptr);
+        fwrite(&users[i],sizeof(struct user), 1, fptr);
     }
     fclose(fptr);
 }
 
 void withdraw(struct user u) {
+    struct user u1;
+    struct user users[100];
+    int counter;
+    int withdrawal;
+    char wd_buffer[100];
+
+    FILE* fptr = fopen("user-records.dat", "rb");
+    if(fptr == NULL){
+        fprintf(stderr, "ERROR opening file user-records.dat\n");
+        exit(-1);
+    }
+
+    system("cls");
+    printf("\nEnter Withdrawal Amount: ");
+    if(fgets(wd_buffer, 100, stdin)) {
+        wd_buffer[strcspn(wd_buffer, "\r\n")] = 0;
+        withdrawal = atoi(wd_buffer);
+    }
+
+    u.balance -= withdrawal;
+
+    while(fread(&u1, sizeof(struct user), 1, fptr)) {
+        users[counter] = u1;
+        ++counter;
+    }
+    fclose(fptr);
+
+    for(int i=0; i<(sizeof(users)/sizeof(users[0])); i++) {
+        if (users[i].acc_number == u.acc_number) {
+            users[i] = u;
+            break;
+        }
+    }
+    
+    fptr = fopen("user-records.dat", "wb");
+    if(fptr == NULL) {
+        fprintf(stderr, "ERROR opening user-records.dat\n");
+        exit(-1);
+    }
+    for(int i = 0; i<counter; ++i) {
+        fwrite(&users[i],sizeof(struct user), 1, fptr);
+    }
+    fclose(fptr);
 
 }
 
